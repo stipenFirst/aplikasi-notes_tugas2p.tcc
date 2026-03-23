@@ -39,7 +39,7 @@
 </div>
 
 <script>
-    const apiUrl = 'http://localhost:3000/notes'; // Menyambung ke Backend lokalmu
+    const apiUrl = 'http://localhost:3000/notes'; 
 
     // 1. FUNGSI LIHAT CATATAN (GET)
     async function fetchNotes() {
@@ -91,7 +91,6 @@
 
     // 3. FUNGSI EDIT CATATAN (PUT)
     async function editNote(id, oldJudul, oldIsi) {
-        // Menggunakan prompt sederhana untuk edit tanpa framework
         const judulBaru = prompt("Edit Judul Catatan:", oldJudul);
         const isiBaru = prompt("Edit Isi Catatan:", oldIsi);
 
