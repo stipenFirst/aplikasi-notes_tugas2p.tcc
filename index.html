@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi NotesKu</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; }
+        form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button { padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-submit { background-color: #3498db; color: white; }
+        .btn-submit:hover { background-color: #2980b9; }
+        .note-card { background: #f9f9f9; border-left: 5px solid #3498db; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+        .note-card h3 { margin-top: 0; color: #2c3e50; }
+        .note-card p { white-space: pre-wrap; }
+        .note-card small { color: #7f8c8d; font-size: 12px; }
+        .action-btns { margin-top: 10px; display: flex; gap: 10px; }
+        .btn-edit { background-color: #f1c40f; color: #333; padding: 5px 10px; font-size: 14px; }
+        .btn-delete { background-color: #e74c3c; color: white; padding: 5px 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📝 Aplikasi NotesKu</h2>
+
+    <form id="noteForm">
+        <input type="text" id="judul" placeholder="Ketik judul catatan..." required>
+        <textarea id="isi" rows="4" placeholder="Ketik isi catatan di sini..." required></textarea>
+        <button type="submit" class="btn-submit">Simpan Catatan</button>
+    </form>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+    <div id="notesList"></div>
+</div>
+
+<script>
+    const apiUrl = 'http://localhost:3000/notes'; // Menyambung ke Backend lokalmu
+
+    // 1. FUNGSI LIHAT CATATAN (GET)
+    async function fetchNotes() {
+        try {
+            const response = await fetch(apiUrl);
+            const notes = await response.json();
+            const notesList = document.getElementById('notesList');
+            notesList.innerHTML = '';
+
+            notes.forEach(note => {
+                const noteEl = document.createElement('div');
+                noteEl.className = 'note-card';
+                // Konversi format tanggal agar lebih rapi
+                const tanggal = new Date(note.tanggal_dibuat).toLocaleString('id-ID');
+                
+                noteEl.innerHTML = `
+                    <h3>${note.judul}</h3>
+                    <p>${note.isi}</p>
+                    <small>🕒 Dibuat pada: ${tanggal}</small>
+                    <div class="action-btns">
+                        <button class="btn-edit" onclick="editNote(${note.id}, '${note.judul}', '${note.isi}')">✏️ Edit</button>
+                        <button class="btn-delete" onclick="deleteNote(${note.id})">🗑️ Hapus</button>
+                    </div>
+                `;
+                notesList.appendChild(noteEl);
+            });
+        } catch (error) {
+            console.error('Gagal mengambil data:', error);
+        }
+    }
+
+    // 2. FUNGSI TAMBAH CATATAN (POST)
+    document.getElementById('noteForm').addEventListener('submit', async (e) => {
+        e.preventDefault(); // Mencegah web reload
+        const judul = document.getElementById('judul').value;
+        const isi = document.getElementById('isi').value;
+
+        await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ judul, isi })
+        });
+
+        // Kosongkan form setelah sukses submit
+        document.getElementById('judul').value = '';
+        document.getElementById('isi').value = '';
+        fetchNotes(); // Refresh daftar catatan
+    });
+
+    // 3. FUNGSI EDIT CATATAN (PUT)
+    async function editNote(id, oldJudul, oldIsi) {
+        // Menggunakan prompt sederhana untuk edit tanpa framework
+        const judulBaru = prompt("Edit Judul Catatan:", oldJudul);
+        const isiBaru = prompt("Edit Isi Catatan:", oldIsi);
+
+        if (judulBaru !== null && isiBaru !== null && judulBaru.trim() !== "") {
+            await fetch(`${apiUrl}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ judul: judulBaru, isi: isiBaru })
+            });
+            fetchNotes(); // Refresh daftar catatan
+        }
+    }
+
+    // 4. FUNGSI HAPUS CATATAN (DELETE)
+    async function deleteNote(id) {
+        if (confirm('Apakah kamu yakin ingin menghapus catatan ini?')) {
+            await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+            fetchNotes(); // Refresh daftar catatan
+        }
+    }
+
+    // Panggil fungsi tampilkan catatan saat web pertama kali dibuka
+    fetchNotes();
+</script>
+
+</body>
+</html>
